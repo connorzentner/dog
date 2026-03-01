@@ -23,30 +23,36 @@ void syntax_highlight(const char *line) {
     char word[32];
     int word_index = 0;
     
-    char types[5][32] = { "int", "char", "float", "double" };
-    int type_count = 4;
+    char types[8][32] = { "int", "char", "float", "double", "bool", "long", "static", "const" };
+    int type_count = 8;
 
-    char funcs[3][32] = { "void", "return" };
+    char funcs[2][32] = { "void", "return" };
     int func_count = 2;
 
-    char statements[10][32] = { "for", "while", "do", "switch", "case", "if", "else",  "break", "continue" };
+    char statements[9][32] = { "for", "while", "do", "switch", "case", "if", "else",  "break", "continue" };
     int statement_count = 9;
 
-    char headers[3][32] = { "include", "define" };
+    char headers[2][32] = { "include", "define" };
     int header_count = 2;
+
+    char active_quote = '\0';
 
     for (int i = 0; line[i] != '\0'; i++) {
         if (state == 1) {
             printf("%c", line[i]);
-            if (line[i] == '"') {
-                printf(RESET);
-                state = 0;
+            if (line[i] == active_quote) {
+                if (i > 0 && line[i - 1] != '\\') {
+                    printf(RESET);
+                    state = 0;
+                    active_quote = '\0';
+                }
             }
             continue; 
         }
 
-        if (line[i] == '"') {
-            printf(GREEN "\"");
+        if (line[i] == '"' || line[i] == '\'') {
+            active_quote = line[i];
+            printf(GREEN "%c", active_quote);
             state = 1;
             continue;
         }
@@ -121,7 +127,7 @@ void syntax_highlight(const char *line) {
         }
 
         switch (line[i]) {
-            case '{': case '}': printf(YELLOW "%c" RESET, line[i]); break;
+            case '{': case '}': printf(WHITE "%c" RESET, line[i]); break;
             case '[': case ']': printf(CYAN "%c" RESET, line[i]); break;
             case '(': case ')': printf(BLUE "%c" RESET, line[i]); break;
             case '#': printf(CYAN "%c" RESET, line[i]); break;

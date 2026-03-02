@@ -1,12 +1,13 @@
 #include <stdio.h>
-#include <stdlib.h>
+// #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <errno.h>
+// #include <errno.h>
 #include <string.h>
 #include <stdbool.h>
 #include <ctype.h>
 
+// Color macros
 #define RESET   "\033[0m"
 #define BOLD    "\033[1m"
 #define BLACK   "\033[30m"
@@ -17,35 +18,62 @@
 #define MAGENTA "\033[35m"
 #define CYAN    "\033[36m"
 #define WHITE   "\033[37m"
+#define NUM_LANGUAGES (sizeof(languages) / sizeof(languages[0]))
 
-void syntax_highlight(const char *line) {
+// Struct for language configs
+typedef struct {
+    const char *extention;
+    const char **types;
+    int type_count;
+    const char **keywords;
+    int keyword_count;
+    const char **statements;
+    int statement_count;
+    const char **headers;
+    int header_count;
+    const char *single_line_comment;
+} LanguageConfig;
+
+// C config
+const char *c_types[] = { "int", "char", "float", "double", "bool", "long", "static", "const" };
+const char *c_keywords[] = { "void", "return" };
+const char *c_statements[] = { "for", "while", "do", "switch", "case", "if", "else", "break", "continue" };
+const char *c_headers[] = { "include", "define" };
+LanguageConfig c_lang = {
+    .extention = ".c",
+    .types = c_types,
+    .type_count = 8,
+    .keywords = c_keywords,
+    .keyword_count = 2,
+    .statements = c_statements,
+    .statement_count = 9,
+    .headers = c_headers,
+    .header_count = 2,
+    .single_line_comment = "//"
+};
+
+// Function for handling syntax highlighting
+void syntax_highlight(const char *line, LanguageConfig *lang) {
     int state = 0;
     char word[32];
     int word_index = 0;
-    
-    char types[8][32] = { "int", "char", "float", "double", "bool", "long", "static", "const" };
-    int type_count = 8;
-
-    char funcs[2][32] = { "void", "return" };
-    int func_count = 2;
-
-    char statements[9][32] = { "for", "while", "do", "switch", "case", "if", "else",  "break", "continue" };
-    int statement_count = 9;
-
-    char headers[2][32] = { "include", "define" };
-    int header_count = 2;
-
     char active_quote = '\0';
 
     for (int i = 0; line[i] != '\0'; i++) {
+        // Single line comment detection
+        if (state == 0 && lang->single_line_comment != NULL) {
+            if (strncmp(&line[i], lang->single_line_comment, strlen(lang->single_line_comment)) == 0) {
+                printf(GREEN "%s" RESET, &line[i]);
+                return;
+            }
+        }
+    
         if (state == 1) {
             printf("%c", line[i]);
-            if (line[i] == active_quote) {
-                if (i > 0 && line[i - 1] != '\\') {
-                    printf(RESET);
-                    state = 0;
-                    active_quote = '\0';
-                }
+            if (line[i] == active_quote && (i == 0 || line[i - 1] != '\\')) {
+                printf(RESET);
+                state = 0;
+                active_quote = '\0';
             }
             continue; 
         }
@@ -71,29 +99,29 @@ void syntax_highlight(const char *line) {
                 printf(YELLOW "%s" RESET, word);
             } else {
                 bool type_found = false;
-                bool func_found = false;
+                bool keyword_found = false;
                 bool statement_found = false;
                 bool header_found = false;
 
-                for (int j = 0; j < type_count; j++) {
-                    if (strcmp(word, types[j]) == 0) {
+                for (int j = 0; j < lang->type_count; j++) {
+                    if (strcmp(word, lang->types[j]) == 0) {
                         type_found = true;
                         break;
                     }
                 }
                 
                 if (!type_found) {
-                    for (int j = 0; j < func_count; j++) {
-                        if (strcmp(word, funcs[j]) == 0) {
-                            func_found = true;
+                    for (int j = 0; j < lang->keyword_count; j++) {
+                        if (strcmp(word, lang->keywords[j]) == 0) {
+                            keyword_found = true;
                             break;
                         }
                     }
                 }
 
-                if (!func_found) {
-                    for (int j = 0; j < statement_count; j++) {
-                        if (strcmp(word, statements[j]) == 0) {
+                if (!keyword_found) {
+                    for (int j = 0; j < lang->statement_count; j++) {
+                        if (strcmp(word, lang->statements[j]) == 0) {
                             statement_found = true;
                             break;
                         }
@@ -101,8 +129,8 @@ void syntax_highlight(const char *line) {
                 }
 
                 if (!statement_found) {
-                    for (int j = 0; j < header_count; j++) {
-                        if (strcmp(word, headers[j]) == 0) {
+                    for (int j = 0; j < lang->header_count; j++) {
+                        if (strcmp(word, lang->headers[j]) == 0) {
                             header_found = true;
                             break;
                         }
@@ -111,7 +139,7 @@ void syntax_highlight(const char *line) {
 
                 if (type_found) {
                     printf(BOLD RED "%s" RESET, word);
-                } else if (func_found) {
+                } else if (keyword_found) {
                     printf(BOLD BLUE "%s" RESET, word);
                 } else if (statement_found) {
                     printf(MAGENTA "%s" RESET, word);
@@ -137,19 +165,33 @@ void syntax_highlight(const char *line) {
     printf(RESET);
 }
 
+LanguageConfig* languages[] = {
+    &c_lang
+};
+
+LanguageConfig* get_config(const char *filename) {
+    const char *dot = strrchr(filename, '.');
+    if (!dot) {
+        return NULL;
+    }
+
+    for (int i = 0; i < NUM_LANGUAGES; i++) {
+        if (strcmp(dot, languages[i]->extention) == 0) {
+            return languages[i];
+        }
+    }
+    return NULL;
+}
+
 int main(int argc, char **argv) {
     char lines[500];
     int number = 0;
     int opt;
-
     bool show_syntax = true;
-    bool show_numbers = true;
+    bool show_numbers = false;
 
-    while ((opt = getopt(argc, argv, "sn")) != -1) {
+    while ((opt = getopt(argc, argv, "n")) != -1) {
         switch (opt) {
-            case 's':
-                show_syntax = true;
-                break;
             case 'n':
                 show_numbers = true;
                 break;
@@ -157,27 +199,53 @@ int main(int argc, char **argv) {
     }
 
     FILE *file = fopen(argv[optind], "r");
-    
-    if (file == NULL) {
-        printf(BOLD RED "%s " RESET "not found.\n", argv[1]);
-        return 1;
-    } else if (optind >= argc) {
+
+    if (optind >= argc) {
         printf(BOLD RED "ERROR " RESET "expected argument after flag.\n");
         return 1;
+    } else if (file == NULL) {
+        printf(BOLD RED "%s " RESET "not found.\n", argv[1]);
+        return 1;
+    }
+
+    const char *filename = argv[optind];
+
+    LanguageConfig *current_lang = get_config(filename);
+
+    if (current_lang == NULL) {
+        show_syntax = false;
+    }
+    
+
+    if (show_numbers) {
+        printf(YELLOW "┌─────┬" RESET); 
+        for (int i = 0; i < 100; i++) {
+            printf(YELLOW "─" RESET);
+        }
+        printf("\n");
     }
 
     while (fgets(lines, 500, file) != NULL) {
         if (show_numbers) {
             number ++;
-            printf(BOLD YELLOW "%3d" RESET " │ ", number);
+            printf(YELLOW "│" RESET BOLD BLUE "%4d" RESET YELLOW " │ " RESET, number);
         } 
 
-        if (show_syntax) {
-            syntax_highlight(lines);
+        if (show_syntax && current_lang != NULL) {
+            syntax_highlight(lines, current_lang);
         } else {
             printf("%s", lines);
         }
     }
 
+    if (show_numbers) {
+        printf(YELLOW "└─────┴" RESET);
+        for (int i = 0; i < 100; i++) {
+            printf(YELLOW "─" RESET);
+        }
+        printf("\n");
+    }
+    
+    fclose(file);
     return 0;
 }

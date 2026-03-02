@@ -1,13 +1,13 @@
 # dog
 
-An alternative to the core utils cat tool
+A simple alternative to the core utils cat tool
 
 ## Description
 
-With dog I plan to format file output with the following features:
+dog aims to format file output with the following features:
 
-* Syntax highlighting 
+* Syntax highlighting that inherits your favorite terminal colors!
 * Pretty number columning
-* File type detection for proper formatting
+* File type & language detection for proper formatting
 
 and more soon to come.

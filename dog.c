@@ -1,56 +1,10 @@
 #include <stdio.h>
-// #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
-// #include <errno.h>
 #include <string.h>
 #include <stdbool.h>
 #include <ctype.h>
-
-// Color macros
-#define RESET   "\033[0m"
-#define BOLD    "\033[1m"
-#define BLACK   "\033[30m"
-#define RED     "\033[31m"
-#define GREEN   "\033[32m"
-#define YELLOW  "\033[33m"
-#define BLUE    "\033[34m"
-#define MAGENTA "\033[35m"
-#define CYAN    "\033[36m"
-#define WHITE   "\033[37m"
-#define NUM_LANGUAGES (sizeof(languages) / sizeof(languages[0]))
-
-// Struct for language configs
-typedef struct {
-    const char *extention;
-    const char **types;
-    int type_count;
-    const char **keywords;
-    int keyword_count;
-    const char **statements;
-    int statement_count;
-    const char **headers;
-    int header_count;
-    const char *single_line_comment;
-} LanguageConfig;
-
-// C config
-const char *c_types[] = { "int", "char", "float", "double", "bool", "long", "static", "const" };
-const char *c_keywords[] = { "void", "return" };
-const char *c_statements[] = { "for", "while", "do", "switch", "case", "if", "else", "break", "continue" };
-const char *c_headers[] = { "include", "define" };
-LanguageConfig c_lang = {
-    .extention = ".c",
-    .types = c_types,
-    .type_count = 8,
-    .keywords = c_keywords,
-    .keyword_count = 2,
-    .statements = c_statements,
-    .statement_count = 9,
-    .headers = c_headers,
-    .header_count = 2,
-    .single_line_comment = "//"
-};
+#include "syntax.h"
 
 // Function for handling syntax highlighting
 void syntax_highlight(const char *line, LanguageConfig *lang) {
@@ -165,24 +119,7 @@ void syntax_highlight(const char *line, LanguageConfig *lang) {
     printf(RESET);
 }
 
-LanguageConfig* languages[] = {
-    &c_lang
-};
-
-LanguageConfig* get_config(const char *filename) {
-    const char *dot = strrchr(filename, '.');
-    if (!dot) {
-        return NULL;
-    }
-
-    for (int i = 0; i < NUM_LANGUAGES; i++) {
-        if (strcmp(dot, languages[i]->extention) == 0) {
-            return languages[i];
-        }
-    }
-    return NULL;
-}
-
+// Driver function
 int main(int argc, char **argv) {
     char lines[500];
     int number = 0;

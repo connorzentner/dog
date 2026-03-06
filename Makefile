@@ -9,4 +9,4 @@ $(TARGET): $(SRC) syntax.h
 	$(CC) $(CFLAGS) $(SRC) -o $(TARGET)
 
 clean: 
-	rm $(TARGET)
+	rm -rf $(TARGET)

@@ -3,9 +3,9 @@ CFLAGS = -Wall -Wextra -g
 
 TARGET = dog
 
-SRC = dog.c config.c
+SRC = main.c config.c
 
-$(TARGET): $(SRC) syntax.h
+$(TARGET): $(SRC)
 	$(CC) $(CFLAGS) $(SRC) -o $(TARGET)
 
 clean: 

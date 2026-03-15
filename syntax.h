@@ -1,5 +1,4 @@
-#ifndef SYNTAX_H
-#define SYNTAX_H
+#pragma once
 
 // Color macros
 #define RESET   "\033[0m"
@@ -30,5 +29,3 @@ typedef struct {
 // Function prototypes
 void syntax_highlight(const char *line, LanguageConfig *lang);
 LanguageConfig* get_config(const char *filename);
-
-#endif
